@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Chess</title>
+    
+    <!-- CSS Dependencies -->
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #game-container {
+            text-align: center;
+        }
+
+        #board {
+            width: 400px;
+            margin: 20px auto;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        input {
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin-left: 5px;
+            cursor: pointer;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        button:hover { background-color: #2ecc71; }
+        button#joinBtn { background-color: #2980b9; }
+        button#joinBtn:hover { background-color: #3498db; }
+
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #ecf0f1;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Real-Time Chess</h1>
+        
+        <div class="controls" id="room-controls">
+            <input type="text" id="roomIdInput" placeholder="Enter Room ID (e.g. room1)">
+            <button id="createBtn">Create Room</button>
+            <button id="joinBtn">Join Room</button>
+        </div>
+
+        <div id="board"></div>
+        <div id="status">Enter a Room ID to start.</div>
+    </div>
+
+    <!-- JS Dependencies -->
+    <!-- jQuery (Required for Chessboard.js) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Chess.js (Logic) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <!-- Chessboard.js (UI) -->
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <!-- Socket.io Client -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <script>
+        // --- CONFIGURATION ---
+        // PASTE YOUR REPLIT URL HERE (Don't include the trailing slash)
+        // Example: "https://my-chess-app.username.repl.co"
+        const socket = io("http://chess-game-backend--shakeebsaahmed.replit.app"); 
+
+        let board = null;
+        let game = new Chess();
+        let playerColor = 'white'; // Default, updated by server
+        let currentRoom = null;
+
+        const statusEl = document.getElementById('status');
+        const roomIdInput = document.getElementById('roomIdInput');
+
+        // --- CHESSBOARD LOGIC ---
+        function onDragStart(source, piece, position, orientation) {
+            // Do not pick up pieces if the game is over
+            if (game.game_over()) return false;
+
+            // Only pick up pieces for the side to move
+            if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+                (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+                return false;
+            }
+
+            // Only allow player to move their own color
+            if ((playerColor === 'white' && piece.search(/^b/) !== -1) ||
+                (playerColor === 'black' && piece.search(/^w/) !== -1)) {
+                return false;
+            }
+        }
+
+        function onDrop(source, target) {
+            // see if the move is legal
+            const move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q' // NOTE: always promote to a queen for simplicity
+            });
+
+            // illegal move
+            if (move === null) return 'snapback';
+
+            updateStatus();
+
+            // Emit move to server
+            socket.emit('move', {
+                roomId: currentRoom,
+                move: move, // Send the move object
+                fen: game.fen() // Send the new board state
+            });
+        }
+
+        function onSnapEnd() {
+            board.position(game.fen());
+        }
+
+        function updateStatus() {
+            let status = '';
+            let moveColor = 'White';
+            if (game.turn() === 'b') moveColor = 'Black';
+
+            if (game.in_checkmate()) {
+                status = 'Game over, ' + moveColor + ' is in checkmate.';
+            } else if (game.in_draw()) {
+                status = 'Game over, drawn position';
+            } else {
+                status = moveColor + ' to move';
+                if (game.in_check()) status += ', ' + moveColor + ' is in check';
+            }
+            statusEl.innerText = status;
+        }
+
+        // Initialize Board with Wikipedia Pieces
+        const config = {
+            draggable: true,
+            position: 'start',
+            onDragStart: onDragStart,
+            onDrop: onDrop,
+            onSnapEnd: onSnapEnd,
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+        };
+        board = Chessboard('board', config);
+
+        // --- SOCKET.IO EVENTS ---
+
+        // 1. Create Room
+        document.getElementById('createBtn').addEventListener('click', () => {
+            const roomId = roomIdInput.value;
+            if(!roomId) return alert("Please enter a room ID");
+            currentRoom = roomId;
+            socket.emit('create_room', roomId);
+        });
+
+        // 2. Join Room
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            const roomId = roomIdInput.value;
+            if(!roomId) return alert("Please enter a room ID");
+            currentRoom = roomId;
+            socket.emit('join_room', roomId);
+        });
+
+        // Handle Errors (Full room, duplicate room)
+        socket.on('error', (msg) => {
+            alert(msg);
+            currentRoom = null;
+        });
+
+        // Set Player Color and Orientation
+        socket.on('playerColor', (color) => {
+            playerColor = color;
+            board.orientation(color); // Flip board for black
+            statusEl.innerText = `You are playing as ${color}. Waiting for opponent...`;
+            
+            // Disable controls once connected
+            document.getElementById('room-controls').style.display = 'none';
+        });
+
+        // Start Game
+        socket.on('startGame', () => {
+            game.reset();
+            board.position('start');
+            updateStatus();
+        });
+
+        // Receive Move from Opponent
+        socket.on('move', (move) => {
+            game.move(move);
+            board.position(game.fen());
+            updateStatus();
+        });
+    </script>
+</body>
+</html>
