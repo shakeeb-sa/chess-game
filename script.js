@@ -1,5 +1,5 @@
 // --- CONFIGURATION ---
-const SERVER_URL = "http://chess-game-backend--shakeebsaahmed.replit.app"; 
+const SERVER_URL = "https://chess-game-backend--shakeebsaahmed.replit.app"; 
 // Example: "https://my-chess-app.glitch.me" or "https://chess.onrender.com"
 
 // --- VARIABLES ---
