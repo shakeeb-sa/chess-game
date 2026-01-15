@@ -3,226 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Chess</title>
-    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <title>Grandmaster Chess</title>
     
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        
-        /* Auth Overlay */
-        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .auth-box { background: rgba(0,0,0,0.3); padding: 30px; border-radius: 10px; text-align: center; width: 300px; }
-        .auth-box input { width: 90%; padding: 10px; margin: 10px 0; border: none; border-radius: 5px; }
-        .auth-box button { width: 100%; padding: 10px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .auth-box button:hover { background: #2ecc71; }
-        .toggle-btn { margin-top: 10px; color: #3498db; cursor: pointer; text-decoration: underline; font-size: 0.9rem; }
-
-        /* Game UI */
-        #game-container { display: none; text-align: center; }
-        #board { width: 400px; margin: 20px auto; }
-        .controls { margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; }
-        input { padding: 8px; border-radius: 4px; border: none; font-size: 16px; }
-        button.game-btn { padding: 8px 16px; margin-left: 5px; cursor: pointer; background-color: #2980b9; color: white; border: none; border-radius: 4px; font-size: 16px; }
-        #status { margin-top: 10px; font-weight: bold; font-size: 1.2rem; color: #ecf0f1; }
-        #user-display { position: absolute; top: 20px; right: 20px; font-weight: bold; }
-        #logout-btn { background: #c0392b; padding: 5px 10px; border-radius: 4px; border: none; color: white; cursor: pointer; margin-left: 10px;}
-    </style>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Your Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <!-- AUTH SCREEN -->
     <div id="auth-screen">
-        <div class="auth-box">
+        <div class="card">
+            <h1 style="font-size: 2rem;"><i class="fas fa-chess-knight"></i> Chess.io</h1>
             <h2 id="auth-title">Login</h2>
             <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Password">
-            <button id="auth-btn">Login</button>
-            <p class="toggle-btn" id="toggle-auth">Need an account? Register</p>
-            <p id="auth-msg" style="color: #e74c3c; font-size: 0.9rem; margin-top: 10px;"></p>
+            <button id="auth-btn">Let's Play</button>
+            <div class="error-msg" id="auth-msg"></div>
+            <p class="toggle-link" id="toggle-auth">New here? Create an account</p>
         </div>
     </div>
 
-    <!-- GAME SCREEN -->
-    <div id="user-display"></div>
+    <!-- MAIN GAME CONTAINER -->
     <div id="game-container">
-        <h1>Real-Time Chess</h1>
-        <div class="controls" id="room-controls">
-            <input type="text" id="roomIdInput" placeholder="Enter Room ID">
-            <button class="game-btn" id="createBtn">Create Room</button>
-            <button class="game-btn" id="joinBtn">Join Room</button>
+        <!-- Header -->
+        <div class="header">
+            <div class="user-profile">
+                <i class="fas fa-user-astronaut"></i>
+                <span id="user-display-name">Player</span>
+            </div>
+            <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
-        <div id="board"></div>
-        <div id="status">Enter a Room ID to start.</div>
+
+        <!-- Game Layout -->
+        <div class="game-layout">
+            <!-- Chess Board -->
+            <div id="board"></div>
+
+            <!-- Controls Sidebar -->
+            <div class="sidebar">
+                <!-- Status Panel -->
+                <div class="status-box" id="status">
+                    Waiting for game start...
+                </div>
+
+                <!-- Room Controls -->
+                <div class="panel" id="room-panel">
+                    <h3><i class="fas fa-door-open"></i> Game Room</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.7;">Enter a unique ID to create or join a private match.</p>
+                    <input type="text" id="roomIdInput" placeholder="Ex: room-55">
+                    <div class="room-controls">
+                        <button id="createBtn">Create</button>
+                        <button id="joinBtn">Join</button>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="panel">
+                    <h3><i class="fas fa-info-circle"></i> How to Play</h3>
+                    <ul style="font-size: 0.85rem; opacity: 0.8; padding-left: 20px; line-height: 1.6;">
+                        <li>Enter a Room ID.</li>
+                        <li><strong>Create:</strong> You play as White.</li>
+                        <li><strong>Join:</strong> You play as Black.</li>
+                        <li>Share the Room ID with a friend!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- External JS Libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-    <script>
-        // --- CONFIGURATION ---
-        const SERVER_URL = "https://chess-game-backend--shakeebsaahmed.replit.app"; // <-- REPLACE THIS
-        // e.g. "https://shiny-fast-cheetah.glitch.me" or "http://localhost:3000"
-
-        let socket;
-        let board = null;
-        let game = new Chess();
-        let playerColor = 'white';
-        let isRegistering = false;
-        let token = localStorage.getItem('token'); // Check if already logged in
-
-        // --- AUTH LOGIC ---
-        const authScreen = document.getElementById('auth-screen');
-        const gameContainer = document.getElementById('game-container');
-        const authBtn = document.getElementById('auth-btn');
-        const authTitle = document.getElementById('auth-title');
-        const toggleAuth = document.getElementById('toggle-auth');
-        const authMsg = document.getElementById('auth-msg');
-
-        // Toggle between Login and Register
-        toggleAuth.addEventListener('click', () => {
-            isRegistering = !isRegistering;
-            authTitle.innerText = isRegistering ? "Register" : "Login";
-            authBtn.innerText = isRegistering ? "Register" : "Login";
-            toggleAuth.innerText = isRegistering ? "Have an account? Login" : "Need an account? Register";
-            authMsg.innerText = "";
-        });
-
-        // Handle Login/Register Click
-        authBtn.addEventListener('click', async () => {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const endpoint = isRegistering ? '/register' : '/login';
-
-            try {
-                const res = await fetch(SERVER_URL + endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await res.json();
-
-                if (!res.ok) throw new Error(data.message);
-
-                if (isRegistering) {
-                    // Registration successful, switch to login
-                    alert("Registration successful! Please login.");
-                    toggleAuth.click();
-                } else {
-                    // Login successful
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('username', data.username);
-                    token = data.token;
-                    initializeGame(data.username);
-                }
-            } catch (err) {
-                authMsg.innerText = err.message;
-            }
-        });
-
-        // Check if user is already logged in
-        if (token) {
-            initializeGame(localStorage.getItem('username'));
-        }
-
-        function initializeGame(username) {
-            authScreen.style.display = 'none';
-            gameContainer.style.display = 'block';
-            
-            document.getElementById('user-display').innerHTML = 
-                `Hi, ${username} <button id="logout-btn">Logout</button>`;
-            
-            document.getElementById('logout-btn').addEventListener('click', () => {
-                localStorage.clear();
-                location.reload();
-            });
-
-            connectSocket();
-        }
-
-        // --- GAME LOGIC ---
-        function connectSocket() {
-            // CRITICAL: Send token to server
-            socket = io(SERVER_URL, {
-                auth: { token: token }
-            });
-
-            socket.on('connect_error', (err) => {
-                console.log(err.message); 
-                alert("Session expired. Please login again.");
-                localStorage.clear();
-                location.reload();
-            });
-
-            socket.on('playerColor', (color) => {
-                playerColor = color;
-                board.orientation(color);
-                document.getElementById('status').innerText = `You are playing as ${color}.`;
-                document.getElementById('room-controls').style.display = 'none';
-            });
-
-            socket.on('startGame', (fen) => {
-                game.load(fen);
-                board.position(fen);
-                updateStatus();
-            });
-
-            socket.on('move', (move) => {
-                game.move(move);
-                board.position(game.fen());
-                updateStatus();
-            });
-            
-            // Re-bind buttons now that socket exists
-            document.getElementById('createBtn').onclick = () => {
-                const room = document.getElementById('roomIdInput').value;
-                if(room) socket.emit('create_room', room);
-            };
-            document.getElementById('joinBtn').onclick = () => {
-                const room = document.getElementById('roomIdInput').value;
-                if(room) socket.emit('join_room', room);
-            };
-
-            initBoard();
-        }
-
-        function onDragStart(source, piece) {
-            if (game.game_over()) return false;
-            if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-                (game.turn() === 'b' && piece.search(/^w/) !== -1)) return false;
-            if ((playerColor === 'white' && piece.search(/^b/) !== -1) ||
-                (playerColor === 'black' && piece.search(/^w/) !== -1)) return false;
-        }
-
-        function onDrop(source, target) {
-            const move = game.move({ from: source, to: target, promotion: 'q' });
-            if (move === null) return 'snapback';
-            socket.emit('move', { roomId: document.getElementById('roomIdInput').value, move: move, fen: game.fen() });
-            updateStatus();
-        }
-
-        function onSnapEnd() { board.position(game.fen()); }
-
-        function updateStatus() {
-            let status = game.turn() === 'b' ? 'Black to move' : 'White to move';
-            if (game.in_checkmate()) status = 'Game over, checkmate.';
-            else if (game.in_draw()) status = 'Game over, draw.';
-            else if (game.in_check()) status += ', Check!';
-            document.getElementById('status').innerText = status;
-        }
-
-        function initBoard() {
-            board = Chessboard('board', {
-                draggable: true,
-                position: 'start',
-                onDragStart: onDragStart,
-                onDrop: onDrop,
-                onSnapEnd: onSnapEnd,
-                pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
-            });
-        }
-    </script>
+    <!-- Your Custom JS -->
+    <script src="script.js"></script>
 </body>
 </html>

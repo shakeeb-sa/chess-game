@@ -1,0 +1,180 @@
+:root {
+    --primary: #6c5ce7;
+    --secondary: #a29bfe;
+    --dark: #0f0c29;
+    --dark-glass: rgba(15, 12, 41, 0.85);
+    --light: #ffffff;
+    --glass: rgba(255, 255, 255, 0.1);
+    --border: rgba(255, 255, 255, 0.2);
+    --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+* { box-sizing: border-box; transition: all 0.3s ease; }
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: var(--light);
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* --- AUTH SCREEN --- */
+#auth-screen {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(5px);
+    z-index: 100;
+}
+
+.card {
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: var(--shadow);
+    width: 350px;
+    text-align: center;
+    animation: fadeIn 0.5s ease-out;
+}
+
+h2, h1 { margin-bottom: 20px; font-weight: 600; letter-spacing: 1px; }
+
+input {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    outline: none;
+}
+
+input:focus { border-color: var(--primary); background: rgba(255,255,255,0.1); }
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+}
+
+button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(108, 92, 231, 0.6); }
+button:active { transform: translateY(0); }
+
+.toggle-link {
+    margin-top: 15px;
+    font-size: 0.85rem;
+    color: var(--secondary);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.error-msg { color: #ff7675; font-size: 0.85rem; margin-top: 10px; min-height: 20px;}
+
+/* --- GAME UI --- */
+#game-container {
+    display: none;
+    width: 90%;
+    max-width: 1000px;
+    height: 90vh;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: relative;
+    box-shadow: var(--shadow);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 15px;
+}
+
+.user-profile { font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.user-profile i { font-size: 1.5rem; color: var(--secondary); }
+
+.logout-btn {
+    background: rgba(255, 71, 87, 0.2);
+    color: #ff6b81;
+    width: auto;
+    padding: 8px 15px;
+    margin: 0;
+    box-shadow: none;
+}
+.logout-btn:hover { background: rgba(255, 71, 87, 0.4); }
+
+.game-layout {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+#board {
+    width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border-radius: 4px;
+    overflow: hidden; 
+}
+
+.sidebar {
+    flex: 1;
+    min-width: 300px;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.panel {
+    background: rgba(0,0,0,0.2);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.room-controls { display: flex; gap: 10px; margin-top: 10px; }
+.room-controls button { width: auto; flex: 1; margin: 0; }
+#joinBtn { background: linear-gradient(45deg, #00cec9, #81ecec); box-shadow: 0 4px 15px rgba(0, 206, 201, 0.4); }
+
+.status-box {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--secondary);
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 850px) {
+    .game-layout { flex-direction: column; align-items: center; }
+    #board { width: 100%; max-width: 400px; }
+    .sidebar { width: 100%; }
+}
