@@ -18,6 +18,12 @@ const authTitle = document.getElementById('auth-title');
 const toggleAuth = document.getElementById('toggle-auth');
 const authMsg = document.getElementById('auth-msg');
 
+// --- AUDIO ASSETS ---
+// Updated to use Lichess open-source sounds (CORS friendly)
+const moveSound = new Audio('https://github.com/lichess-org/lila/raw/master/public/sound/standard/Move.mp3');
+const captureSound = new Audio('https://github.com/lichess-org/lila/raw/master/public/sound/standard/Capture.mp3');
+const notifySound = new Audio('https://github.com/lichess-org/lila/raw/master/public/sound/standard/GenericNotify.mp3');
+
 // --- AUTH LOGIC ---
 
 // Toggle Auth Mode
@@ -109,7 +115,32 @@ function connectSocket() {
         playerColor = color;
         board.orientation(color);
         updateStatusDisplay(`Game Started! You are ${color.toUpperCase()}.`, true);
-        document.getElementById('room-panel').style.display = 'none'; // Hide controls during game
+        
+        // UI Updates
+        document.getElementById('room-panel').style.display = 'none';
+        document.getElementById('chat-panel').style.display = 'flex'; // <--- SHOW CHAT
+        
+        notifySound.play();
+    });
+
+        // Receive Message
+    socket.on('receiveMessage', ({ message, username }) => {
+        const chatBox = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        
+        div.classList.add('message');
+        div.innerText = `${username}: ${message}`;
+        
+        // Check who sent it to style it (Mine vs Opponent)
+        const myName = localStorage.getItem('username');
+        if (username === myName) {
+            div.classList.add('mine');
+        } else {
+            div.classList.add('opponent');
+        }
+        
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to bottom
     });
 
     socket.on('startGame', (fen) => {
@@ -118,11 +149,17 @@ function connectSocket() {
         updateStatus();
     });
 
-    socket.on('move', (move) => {
-        game.move(move);
-        board.position(game.fen());
-        updateStatus();
-    });
+socket.on('move', (move) => {
+    game.move(move);
+    board.position(game.fen());
+    
+    // --- NEW: Visuals & Sound ---
+    playGameSound(move);
+    highlightMove(move.from, move.to); // Highlight opponent's move
+    // ----------------------------
+    
+    updateStatus();
+});
 
     // Room Buttons
     document.getElementById('createBtn').onclick = () => {
@@ -170,8 +207,21 @@ function onDragStart(source, piece) {
 
 function onDrop(source, target) {
     const move = game.move({ from: source, to: target, promotion: 'q' });
+    
+    // Illegal move
     if (move === null) return 'snapback';
-    socket.emit('move', { roomId: document.getElementById('roomIdInput').value, move: move, fen: game.fen() });
+
+    // --- NEW: Visuals & Sound ---
+    playGameSound(move);
+    highlightMove(source, target);
+    // ----------------------------
+
+    socket.emit('move', { 
+        roomId: document.getElementById('roomIdInput').value, 
+        move: move, 
+        fen: game.fen() 
+    });
+    
     updateStatus();
 }
 
@@ -207,4 +257,53 @@ function initBoard() {
     });
     // Resize board on window resize
     $(window).resize(board.resize);
+}
+
+// --- HELPER FUNCTIONS ---
+
+function playGameSound(move) {
+    let audioToPlay = moveSound;
+
+    // If capture (c) or en passant (e), use capture sound
+    if (move.flags.includes('c') || move.flags.includes('e')) {
+        audioToPlay = captureSound;
+    }
+
+    audioToPlay.currentTime = 0;
+    
+    // Play the sound and catch any browser errors
+    audioToPlay.play().catch(error => {
+        console.error("Audio playback failed:", error);
+        // Note: Browsers block audio if the user hasn't interacted with the page yet.
+    });
+}
+
+function highlightMove(source, target) {
+    // 1. Remove old highlights
+    // We use jQuery to find all squares and remove the class
+    $('#board .square-55d63').removeClass('highlight-square');
+
+    // 2. Add new highlights
+    // Chessboard.js classes look like "square-e4"
+    $('#board .square-' + source).addClass('highlight-square');
+    $('#board .square-' + target).addClass('highlight-square');
+}
+
+
+// --- CHAT FUNCTIONS ---
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('chatInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+});
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    const roomId = document.getElementById('roomIdInput').value;
+    const username = localStorage.getItem('username');
+
+    if (message && roomId) {
+        socket.emit('sendMessage', { roomId, message, username });
+        input.value = ''; // Clear input
+    }
 }
